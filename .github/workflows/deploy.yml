@@ -1,0 +1,72 @@
+name: CD - GitOps Release Deployment (ArgoCD)
+
+on:
+  workflow_run:
+    workflows:
+      - "Backend CI - Build, Test & Push"
+      - "Frontend CI - Build, Test & Push"
+    branches:
+      - main
+    types:
+      - completed
+
+jobs:
+  update-manifests:
+    name: Update Kubernetes Manifests
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    environment: Production
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Update Backend Image Tag in Manifests
+        run: |
+          sed -i "s|scm-backend:.*|scm-backend:${{ github.event.workflow_run.head_sha }}|g" \
+            kubernetes-manifests/backend/deployment.yaml
+
+      - name: Update Frontend Image Tag in Manifests
+        run: |
+          sed -i "s|scm-frontend:.*|scm-frontend:${{ github.event.workflow_run.head_sha }}|g" \
+            kubernetes-manifests/frontend/deployment.yaml
+
+      - name: Commit and Push Updated Manifests
+        run: |
+          git add kubernetes-manifests/
+          git diff --staged --quiet || git commit -m "chore: update image tags to ${{ github.event.workflow_run.head_sha }}"
+          git push
+
+  post-deploy-smoke-test:
+    name: Post-Deployment Smoke Tests
+    runs-on: ubuntu-latest
+    needs: update-manifests
+    environment: Staging
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Wait for ArgoCD Sync
+        run: sleep 60
+
+      - name: Run Newman API Smoke Tests
+        run: |
+          npm install -g newman
+          newman run tests/postman/scm-smoke-tests.json \
+            --env-var baseUrl=${{ vars.STAGING_URL }} \
+            --reporters cli,json \
+            --reporter-json-export newman-report.json
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: newman-smoke-test-report
+          path: newman-report.json
