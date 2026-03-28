@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: backend-config
+  namespace: scm-platform
+data:
+  SPRING_PROFILES_ACTIVE: "production"
+  SERVER_PORT: "8080"
+  SPRING_DATASOURCE_URL: "jdbc:postgresql://$(DB_HOST):5432/scmdb"
+  SPRING_REDIS_HOST: "$(REDIS_HOST)"
+  SPRING_REDIS_PORT: "6379"
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: "$(KAFKA_BROKERS)"
+  MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
+  MANAGEMENT_ENDPOINT_HEALTH_PROBES_ENABLED: "true"
+  LOGGING_LEVEL_ROOT: "INFO"
+  LOGGING_LEVEL_COM_SCM: "INFO"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: backend-secrets
+  namespace: scm-platform
+type: Opaque
+# Values are base64-encoded — set via CI/CD from GitHub Secrets
+# kubectl create secret generic backend-secrets \
+#   --from-literal=DB_HOST=<rds-endpoint> \
+#   --from-literal=DB_PASSWORD=<password> \
+#   --from-literal=REDIS_HOST=<redis-endpoint> \
+#   --from-literal=KAFKA_BROKERS=<brokers> \
+#   --from-literal=JWT_SECRET=<secret> \
+#   -n scm-platform --dry-run=client -o yaml | kubectl apply -f -
+stringData:
+  DB_HOST: "REPLACE_WITH_RDS_ENDPOINT"
+  DB_PASSWORD: "REPLACE_WITH_DB_PASSWORD"
+  REDIS_HOST: "REPLACE_WITH_REDIS_ENDPOINT"
+  KAFKA_BROKERS: "REPLACE_WITH_KAFKA_BROKERS"
+  KAFKA_API_KEY: "REPLACE_WITH_KAFKA_API_KEY"
+  KAFKA_API_SECRET: "REPLACE_WITH_KAFKA_API_SECRET"
+  JWT_SECRET: "REPLACE_WITH_JWT_SECRET_MIN_32_CHARS"
+  DATADOG_API_KEY: "REPLACE_WITH_DATADOG_API_KEY"
