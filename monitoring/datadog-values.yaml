@@ -1,0 +1,74 @@
+# Datadog Agent Helm Chart Values
+# Phase 6: Post-Deployment & Monitoring Verification
+# Deploy with: helm install datadog datadog/datadog -f monitoring/datadog-values.yaml -n monitoring
+
+datadog:
+  apiKey: YOUR_DATADOG_API_KEY   # Replace with your Datadog API key
+  appKey: YOUR_DATADOG_APP_KEY   # Replace with your Datadog App key
+  site: datadoghq.com
+
+  # APM Tracing
+  apm:
+    enabled: true
+    portEnabled: true
+
+  # Log Collection
+  logs:
+    enabled: true
+    containerCollectAll: true
+
+  # Live Process Monitoring
+  processAgent:
+    enabled: true
+    processCollection: true
+
+  # Kubernetes State Metrics
+  kubeStateMetrics:
+    enabled: true
+
+  # Tags for SCM Platform
+  tags:
+    - env:production
+    - service:scm-platform
+    - team:scm-engineering
+
+  # Custom SCM Platform Monitors
+  monitors:
+    high_error_rate:
+      name: "SCM Platform - High 5xx Error Rate"
+      type: metric alert
+      query: "sum(last_5m):sum:trace.http.request.errors{service:scm-backend,env:production}.as_count() / sum:trace.http.request.hits{service:scm-backend,env:production}.as_count() > 0.05"
+      message: |
+        SCM Backend error rate exceeded 5% threshold.
+        Rollback via ArgoCD UI or: git revert HEAD~1
+        @slack-scm-alerts @pagerduty
+      thresholds:
+        critical: 0.05
+        warning: 0.02
+
+    pod_crash_loop:
+      name: "SCM Platform - Pod CrashLoopBackOff"
+      type: metric alert
+      query: "max(last_5m):sum:kubernetes.containers.restarts{namespace:scm-platform} by {pod_name} > 5"
+      message: |
+        Pod is crash-looping in scm-platform namespace.
+        Check logs: kubectl logs -n scm-platform
+        @slack-scm-alerts
+
+# Cluster Agent for Kubernetes metrics
+clusterAgent:
+  enabled: true
+  metricsProvider:
+    enabled: true
+
+# DaemonSet configuration
+agents:
+  containers:
+    agent:
+      resources:
+        requests:
+          cpu: 200m
+          memory: 256Mi
+        limits:
+          cpu: 500m
+          memory: 512Mi
