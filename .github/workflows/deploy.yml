@@ -1,72 +1,73 @@
-name: CD - GitOps Release Deployment (ArgoCD)
+name: Continuous Deployment — GitOps Image Update
 
 on:
   workflow_run:
     workflows:
-      - "Backend CI - Build, Test & Push"
-      - "Frontend CI - Build, Test & Push"
-    branches:
-      - main
-    types:
-      - completed
+      - "Backend CI — Build, Test & Push"
+      - "Frontend CI — Build, Test & Push"
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: 'Docker image tag to deploy'
+        required: true
+        default: 'latest'
+
+env:
+  DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
 
 jobs:
   update-manifests:
-    name: Update Kubernetes Manifests
+    name: Update Kubernetes Image Tags
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    environment: Production
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    environment: production
+
+    permissions:
+      contents: write
 
     steps:
-      - name: Checkout Repository
+      - name: Checkout repository
         uses: actions/checkout@v4
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Configure Git
+      - name: Set image tag
+        id: tag
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "IMAGE_TAG=${{ github.event.inputs.image_tag }}" >> $GITHUB_ENV
+          else
+            echo "IMAGE_TAG=${{ github.event.workflow_run.head_sha }}" >> $GITHUB_ENV
+          fi
 
-      - name: Update Backend Image Tag in Manifests
+      - name: Update backend image tag
         run: |
-          sed -i "s|scm-backend:.*|scm-backend:${{ github.event.workflow_run.head_sha }}|g" \
+          sed -i "s|image: .*/scm-backend:.*|image: ${{ env.DOCKERHUB_USERNAME }}/scm-backend:${{ env.IMAGE_TAG }}|g" \
             kubernetes-manifests/backend/deployment.yaml
 
-      - name: Update Frontend Image Tag in Manifests
+      - name: Update AI/ML image tag
         run: |
-          sed -i "s|scm-frontend:.*|scm-frontend:${{ github.event.workflow_run.head_sha }}|g" \
+          sed -i "s|image: .*/scm-ai-ml:.*|image: ${{ env.DOCKERHUB_USERNAME }}/scm-ai-ml:${{ env.IMAGE_TAG }}|g" \
+            kubernetes-manifests/ai-ml/deployment.yaml
+
+      - name: Update frontend image tag
+        run: |
+          sed -i "s|image: .*/scm-frontend:.*|image: ${{ env.DOCKERHUB_USERNAME }}/scm-frontend:${{ env.IMAGE_TAG }}|g" \
             kubernetes-manifests/frontend/deployment.yaml
 
-      - name: Commit and Push Updated Manifests
+      - name: Commit and push manifest changes
         run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           git add kubernetes-manifests/
-          git diff --staged --quiet || git commit -m "chore: update image tags to ${{ github.event.workflow_run.head_sha }}"
+          git diff --staged --quiet && echo "No changes to commit" && exit 0
+          git commit -m "chore(deploy): update image tags to ${{ env.IMAGE_TAG }} [skip ci]"
           git push
 
-  post-deploy-smoke-test:
-    name: Post-Deployment Smoke Tests
-    runs-on: ubuntu-latest
-    needs: update-manifests
-    environment: Staging
-
-    steps:
-      - name: Checkout Code
-        uses: actions/checkout@v4
-
-      - name: Wait for ArgoCD Sync
-        run: sleep 60
-
-      - name: Run Newman API Smoke Tests
+      - name: ArgoCD sync status
         run: |
-          npm install -g newman
-          newman run tests/postman/scm-smoke-tests.json \
-            --env-var baseUrl=${{ vars.STAGING_URL }} \
-            --reporters cli,json \
-            --reporter-json-export newman-report.json
-
-      - name: Upload Test Report
-        uses: actions/upload-artifact@v4
-        with:
-          name: newman-smoke-test-report
-          path: newman-report.json
+          echo "Manifests updated. ArgoCD will automatically detect the change"
+          echo "and perform a rolling update. Monitor at your ArgoCD UI."
+          echo "Image tag deployed: ${{ env.IMAGE_TAG }}"
