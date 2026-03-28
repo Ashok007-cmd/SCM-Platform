@@ -1,0 +1,40 @@
+# ============================================================
+# SCM-Platform Terraform Variable Values — Example
+# Copy to terraform.tfvars and fill in real values.
+# NEVER commit terraform.tfvars to source control.
+# ============================================================
+
+# General
+aws_region   = "us-east-1"
+environment  = "production"
+project_name = "scm-platform"
+
+# Networking
+vpc_cidr             = "10.0.0.0/16"
+availability_zones   = ["us-east-1a", "us-east-1b", "us-east-1c"]
+private_subnet_cidrs = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+public_subnet_cidrs  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+# EKS
+eks_cluster_version     = "1.29"
+eks_node_instance_types = ["t3.xlarge"]
+eks_node_desired_size   = 3
+eks_node_min_size       = 2
+eks_node_max_size       = 10
+eks_node_disk_size      = 50
+
+# RDS PostgreSQL
+rds_instance_class        = "db.t3.large"
+rds_allocated_storage     = 100
+rds_max_allocated_storage = 500
+rds_engine_version        = "16.2"
+rds_db_name               = "scmdb"
+rds_username              = "scmadmin"
+rds_password              = "CHANGE_ME_USE_GITHUB_SECRET"
+rds_multi_az              = true
+rds_backup_retention_days = 7
+
+# ElastiCache Redis
+redis_node_type       = "cache.t3.medium"
+redis_num_cache_nodes = 2
+redis_engine_version  = "7.2"
