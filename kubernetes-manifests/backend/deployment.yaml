@@ -1,0 +1,90 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scm-backend
+  namespace: scm-platform
+  labels:
+    app: scm-backend
+    version: latest
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: scm-backend
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  template:
+    metadata:
+      labels:
+        app: scm-backend
+    spec:
+      # Phase 5: Flyway DB Migration InitContainer
+      initContainers:
+        - name: flyway-migration
+          image: flyway/flyway:10-alpine
+          args:
+            - migrate
+          env:
+            - name: FLYWAY_URL
+              value: jdbc:postgresql://$(DB_HOST):5432/scmdb
+            - name: FLYWAY_USER
+              value: scmuser
+            - name: FLYWAY_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scm-db-secrets
+                  key: postgres-password
+            - name: FLYWAY_LOCATIONS
+              value: filesystem:/flyway/sql
+          volumeMounts:
+            - name: migration-scripts
+              mountPath: /flyway/sql
+
+      containers:
+        - name: scm-backend
+          image: DOCKERHUB_USERNAME/scm-backend:latest
+          ports:
+            - containerPort: 8080
+          env:
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: scm-config
+                  key: db-host
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: scm-db-secrets
+                  key: postgres-password
+            - name: KAFKA_BOOTSTRAP_SERVERS
+              valueFrom:
+                configMapKeyRef:
+                  name: scm-config
+                  key: kafka-bootstrap-servers
+          resources:
+            requests:
+              memory: "512Mi"
+              cpu: "250m"
+            limits:
+              memory: "1Gi"
+              cpu: "500m"
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            initialDelaySeconds: 15
+            periodSeconds: 5
+
+      volumes:
+        - name: migration-scripts
+          configMap:
+            name: flyway-migrations
