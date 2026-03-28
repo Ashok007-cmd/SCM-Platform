@@ -1,0 +1,25 @@
+{
+  "namespace": "com.scmplatform.events",
+  "type": "record",
+  "name": "InventoryEvent",
+  "doc": "Kafka event for inventory state changes — published by inventory-management service",
+  "fields": [
+    {"name": "eventId", "type": "string", "doc": "Unique event ID (UUID)"},
+    {"name": "eventType", "type": {"type": "enum", "name": "InventoryEventType", "symbols": [
+      "STOCK_RECEIVED", "STOCK_ISSUED", "STOCK_ADJUSTED", "STOCK_TRANSFERRED",
+      "LOW_STOCK_ALERT", "STOCKOUT", "ITEM_EXPIRED", "CYCLE_COUNT_COMPLETED"
+    ]}},
+    {"name": "productId", "type": "string"},
+    {"name": "sku", "type": "string"},
+    {"name": "locationId", "type": "string"},
+    {"name": "previousQuantity", "type": "int", "default": 0},
+    {"name": "newQuantity", "type": "int", "default": 0},
+    {"name": "quantityChanged", "type": "int"},
+    {"name": "movementType", "type": ["null", "string"], "default": null},
+    {"name": "referenceId", "type": ["null", "string"], "default": null},
+    {"name": "referenceType", "type": ["null", "string"], "default": null},
+    {"name": "performedBy", "type": ["null", "string"], "default": null},
+    {"name": "metadata", "type": ["null", {"type": "map", "values": "string"}], "default": null},
+    {"name": "timestamp", "type": {"type": "long", "logicalType": "timestamp-millis"}}
+  ]
+}
