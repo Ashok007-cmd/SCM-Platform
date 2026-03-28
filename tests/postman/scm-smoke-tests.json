@@ -1,0 +1,109 @@
+{
+  "info": {
+    "name": "SCM Platform - Post-Deploy Smoke Tests",
+    "description": "Phase 6: Post-deployment API smoke tests run by Newman in GitHub Actions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://staging.scm-platform.example.com"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Check - Backend",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/actuator/health"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Backend is healthy', () => {",
+            "  pm.response.to.have.status(200);",
+            "  const body = pm.response.json();",
+            "  pm.expect(body.status).to.eql('UP');",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "Health Check - Frontend",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/"
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Frontend loads successfully', () => {",
+            "  pm.response.to.have.status(200);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "API - List Inventory",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/inventory",
+        "header": [{"key": "Accept", "value": "application/json"}]
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Inventory API responds', () => {",
+            "  pm.response.to.have.status(200);",
+            "  pm.response.to.be.json;",
+            "});",
+            "pm.test('Response time under 2s', () => {",
+            "  pm.expect(pm.response.responseTime).to.be.below(2000);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "API - List Suppliers",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/suppliers",
+        "header": [{"key": "Accept", "value": "application/json"}]
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Suppliers API responds', () => {",
+            "  pm.response.to.have.status(200);",
+            "});"
+          ]
+        }
+      }]
+    },
+    {
+      "name": "API - Get Orders",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/v1/orders",
+        "header": [{"key": "Accept", "value": "application/json"}]
+      },
+      "event": [{
+        "listen": "test",
+        "script": {
+          "exec": [
+            "pm.test('Orders API responds', () => {",
+            "  pm.response.to.have.status(200);",
+            "});"
+          ]
+        }
+      }]
+    }
+  ]
+}
