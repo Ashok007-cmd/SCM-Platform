@@ -48,6 +48,11 @@ jobs:
         run: pytest --tb=short
         working-directory: ./backend/ai-ml-services
 
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java, python
+
       - name: Run CodeQL Security Scan
         uses: github/codeql-action/analyze@v3
         with:

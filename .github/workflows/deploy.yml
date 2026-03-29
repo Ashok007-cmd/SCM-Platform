@@ -3,8 +3,8 @@ name: Continuous Deployment — GitOps Image Update
 on:
   workflow_run:
     workflows:
-      - "Backend CI — Build, Test & Push"
-      - "Frontend CI — Build, Test & Push"
+      - "Backend CI - Build, Test & Push"
+      - "Frontend CI - Build, Test & Push"
     types: [completed]
     branches: [main]
   workflow_dispatch:
