@@ -9,6 +9,7 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Repository
@@ -40,4 +41,16 @@ public interface InventoryRepository extends JpaRepository<InventoryItem, UUID> 
 
     @Query("SELECT COALESCE(SUM(i.quantityOnHand * i.product.unitCost), 0) FROM InventoryItem i")
     BigDecimal totalInventoryValue();
+
+    @Query(value = """
+        SELECT p.sku AS sku, p.name AS name,
+               SUM(i.quantity_on_hand * i_p.unit_cost) AS value
+        FROM inventory i
+        JOIN products p ON i.product_id = p.id
+        LEFT JOIN products i_p ON i.product_id = i_p.id
+        GROUP BY p.sku, p.name
+        ORDER BY value DESC
+        LIMIT :limit
+        """, nativeQuery = true)
+    List<Map<String, Object>> findTopByValue(@Param("limit") int limit);
 }

@@ -35,35 +35,27 @@ spec:
             - name: FLYWAY_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: scm-db-secrets
-                  key: postgres-password
+                  name: backend-secrets
+                  key: DB_PASSWORD
             - name: FLYWAY_LOCATIONS
               value: filesystem:/flyway/sql
+          envFrom:
+            - secretRef:
+                name: backend-secrets
           volumeMounts:
             - name: migration-scripts
               mountPath: /flyway/sql
 
       containers:
         - name: scm-backend
-          image: DOCKERHUB_USERNAME/scm-backend:latest
+          image: ghcr.io/ashok007-cmd/scm-platform/scm-backend:latest
           ports:
             - containerPort: 8080
-          env:
-            - name: DB_HOST
-              valueFrom:
-                configMapKeyRef:
-                  name: scm-config
-                  key: db-host
-            - name: DB_PASSWORD
-              valueFrom:
-                secretKeyRef:
-                  name: scm-db-secrets
-                  key: postgres-password
-            - name: KAFKA_BOOTSTRAP_SERVERS
-              valueFrom:
-                configMapKeyRef:
-                  name: scm-config
-                  key: kafka-bootstrap-servers
+          envFrom:
+            - configMapRef:
+                name: backend-config
+            - secretRef:
+                name: backend-secrets
           resources:
             requests:
               memory: "512Mi"

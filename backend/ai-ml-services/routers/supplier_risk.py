@@ -4,7 +4,7 @@ from typing import Optional
 import numpy as np
 from fastapi import APIRouter, Query
 
-router = APIRouter(prefix="/api/v1/suppliers", tags=["Supplier Risk"])
+router = APIRouter()
 
 class SupplierRiskScore:
     def __init__(self, supplier_id: str):

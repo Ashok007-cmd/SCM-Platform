@@ -61,6 +61,14 @@ public class SupplierService {
         repo.delete(findById(id));
     }
 
+    @Transactional
+    @CacheEvict(value = "suppliers", key = "#id")
+    public Supplier approve(UUID id) {
+        Supplier supplier = findById(id);
+        supplier.setStatus(Supplier.SupplierStatus.ACTIVE);
+        return repo.save(supplier);
+    }
+
     public Map<String, Long> getStats() {
         return Map.of(
             "total",        repo.count(),

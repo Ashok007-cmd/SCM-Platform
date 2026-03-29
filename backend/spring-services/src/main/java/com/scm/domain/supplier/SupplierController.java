@@ -50,6 +50,12 @@ public class SupplierController {
         return service.update(id, supplier);
     }
 
+    @PostMapping("/{id}/approve")
+    @PreAuthorize("hasAnyRole('ADMIN','PROCUREMENT_MANAGER')")
+    public Supplier approve(@PathVariable UUID id) {
+        return service.approve(id);
+    }
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseStatus(HttpStatus.NO_CONTENT)

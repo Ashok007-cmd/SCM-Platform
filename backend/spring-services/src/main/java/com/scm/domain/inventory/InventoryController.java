@@ -42,11 +42,31 @@ public class InventoryController {
         return service.getLowStock();
     }
 
+    @PostMapping("/{id}/reserve")
+    @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER','OPERATIONS_MANAGER')")
+    public ResponseEntity<InventoryItem> reserve(
+            @PathVariable UUID id,
+            @RequestParam int quantity) {
+        return ResponseEntity.ok(service.reserveQuantity(id, quantity));
+    }
+
     @PatchMapping("/{id}/adjust")
     @PreAuthorize("hasAnyRole('ADMIN','WAREHOUSE_MANAGER')")
     public ResponseEntity<InventoryItem> adjust(
             @PathVariable UUID id,
             @RequestParam int delta) {
         return ResponseEntity.ok(service.adjustQuantity(id, delta));
+    }
+
+    @GetMapping("/stats/flow")
+    public List<Map<String, Object>> statsFlow(
+            @RequestParam(defaultValue = "30") int days) {
+        return service.getInventoryFlow(days);
+    }
+
+    @GetMapping("/top")
+    public List<Map<String, Object>> topProducts(
+            @RequestParam(defaultValue = "5") int limit) {
+        return service.getTopProducts(limit);
     }
 }

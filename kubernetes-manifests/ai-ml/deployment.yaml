@@ -25,7 +25,7 @@ spec:
       terminationGracePeriodSeconds: 30
       containers:
         - name: scm-ai-ml
-          image: DOCKERHUB_USERNAME/scm-ai-ml:latest
+          image: ghcr.io/ashok007-cmd/scm-platform/scm-ai-ml:latest
           imagePullPolicy: Always
           ports:
             - name: http

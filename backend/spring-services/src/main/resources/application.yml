@@ -50,12 +50,9 @@ spring:
       value-deserializer: org.springframework.kafka.support.serializer.JsonDeserializer
       auto-offset-reset: earliest
 
-  # Security
-  security:
-    oauth2:
-      resourceserver:
-        jwt:
-          issuer-uri: ${JWT_ISSUER_URI:https://auth.scm-platform.example.com}
+  # Security — disable Spring auto-config for OAuth2 RS (custom JWT filter used)
+  autoconfigure:
+    exclude: org.springframework.boot.autoconfigure.security.oauth2.resource.servlet.OAuth2ResourceServerAutoConfiguration
 
 # Actuator — health probes for Kubernetes liveness/readiness
 management:
@@ -79,10 +76,24 @@ management:
         api-key: ${DATADOG_API_KEY:}
         enabled: ${DATADOG_ENABLED:false}
 
+# SCM custom JWT settings (used by JwtTokenProvider)
+scm:
+  security:
+    jwt:
+      secret: ${JWT_SECRET:SCM-Platform-Dev-Secret-Key-Min-32-Chars!}
+      expiration-ms: ${JWT_EXPIRATION_MS:86400000}
+      issuer: ${JWT_ISSUER:scm-platform}
+  kafka:
+    topics:
+      inventory-updates: scm.inventory.updates
+      order-events: scm.order.events
+      supplier-events: scm.supplier.events
+      shipment-tracking: scm.shipment.tracking
+
 # Logging
 logging:
   level:
-    com.scmplatform: INFO
+    com.scm: INFO
     org.springframework: WARN
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
@@ -92,11 +103,3 @@ server:
   port: 8080
   shutdown: graceful
 
-# Kafka Topics
-scm:
-  kafka:
-    topics:
-      inventory-updates: scm.inventory.updates
-      order-events: scm.order.events
-      supplier-events: scm.supplier.events
-      shipment-tracking: scm.shipment.tracking

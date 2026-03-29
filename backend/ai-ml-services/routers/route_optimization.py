@@ -5,7 +5,7 @@ import numpy as np
 from fastapi import APIRouter, Query
 from pydantic import BaseModel
 
-router = APIRouter(prefix="/api/v1/logistics", tags=["Route Optimisation"])
+router = APIRouter()
 
 CARRIERS = ["FedEx", "DHL", "UPS", "Maersk", "DB Schenker"]
 

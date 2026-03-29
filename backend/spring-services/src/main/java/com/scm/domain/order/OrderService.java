@@ -7,7 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -31,14 +35,30 @@ public class OrderService {
     public Map<String, Object> getStats() {
         Instant thirtyDaysAgo = Instant.now().minus(30, ChronoUnit.DAYS);
         return Map.of(
-            "total",      repo.count(),
-            "pending",    repo.countByStatus(Order.OrderStatus.PENDING),
-            "processing", repo.countByStatus(Order.OrderStatus.PROCESSING),
-            "shipped",    repo.countByStatus(Order.OrderStatus.SHIPPED),
-            "delivered",  repo.countByStatus(Order.OrderStatus.DELIVERED),
-            "cancelled",  repo.countByStatus(Order.OrderStatus.CANCELLED),
-            "revenue30d", repo.revenueS(thirtyDaysAgo)
+            "total",           repo.count(),
+            "pending",         repo.countByStatus(Order.OrderStatus.PENDING),
+            "pendingApproval", repo.countByStatus(Order.OrderStatus.PENDING),
+            "processing",      repo.countByStatus(Order.OrderStatus.PROCESSING),
+            "shipped",         repo.countByStatus(Order.OrderStatus.SHIPPED),
+            "delivered",       repo.countByStatus(Order.OrderStatus.DELIVERED),
+            "cancelled",       repo.countByStatus(Order.OrderStatus.CANCELLED),
+            "revenue30d",      repo.revenueS(thirtyDaysAgo),
+            "changePercent",   0
         );
+    }
+
+    public List<Map<String, Object>> getOrderTrend(int days) {
+        List<Map<String, Object>> trend = new ArrayList<>();
+        Instant start = Instant.now().minus(days, ChronoUnit.DAYS);
+        for (int i = 0; i < days; i++) {
+            Instant from = start.plus(i, ChronoUnit.DAYS);
+            Instant to   = from.plus(1, ChronoUnit.DAYS);
+            LocalDate day = from.atZone(ZoneOffset.UTC).toLocalDate();
+            long count = repo.search(null, null, from, to,
+                    org.springframework.data.domain.PageRequest.of(0, 1)).getTotalElements();
+            trend.add(Map.of("date", day.toString(), "orders", count));
+        }
+        return trend;
     }
 
     @Transactional

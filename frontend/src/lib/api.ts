@@ -32,7 +32,7 @@ api.interceptors.response.use(
     if (status === 401) {
       // Clear session and redirect to login
       localStorage.removeItem('scm_access_token')
-      window.location.href = '/login'
+      window.location.replace('/#/login')
     }
 
     if (status === 403) {

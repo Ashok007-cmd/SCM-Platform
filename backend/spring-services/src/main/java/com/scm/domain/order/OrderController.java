@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 
 import jakarta.validation.Valid;
 import java.time.Instant;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -44,6 +45,37 @@ public class OrderController {
     @PreAuthorize("hasAnyRole('ADMIN','SALES_MANAGER')")
     public ResponseEntity<Order> create(@Valid @RequestBody Order order) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(order));
+    }
+
+    @PostMapping("/{id}/confirm")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_MANAGER','OPERATIONS_MANAGER')")
+    public Order confirm(@PathVariable UUID id) {
+        return service.updateStatus(id, Order.OrderStatus.CONFIRMED);
+    }
+
+    @PostMapping("/{id}/ship")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS_MANAGER')")
+    public Order ship(@PathVariable UUID id,
+                      @RequestParam(required = false) String trackingNumber) {
+        return service.updateStatus(id, Order.OrderStatus.SHIPPED);
+    }
+
+    @PostMapping("/{id}/deliver")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS_MANAGER')")
+    public Order deliver(@PathVariable UUID id) {
+        return service.updateStatus(id, Order.OrderStatus.DELIVERED);
+    }
+
+    @PostMapping("/{id}/cancel")
+    @PreAuthorize("hasAnyRole('ADMIN','SALES_MANAGER','OPERATIONS_MANAGER')")
+    public Order cancel(@PathVariable UUID id,
+                        @RequestParam(required = false) String reason) {
+        return service.updateStatus(id, Order.OrderStatus.CANCELLED);
+    }
+
+    @GetMapping("/stats/trend")
+    public List<Map<String, Object>> statsTrend(@RequestParam(defaultValue = "30") int days) {
+        return service.getOrderTrend(days);
     }
 
     @PatchMapping("/{id}/status")
