@@ -4,6 +4,7 @@
 
 [![Release](https://img.shields.io/github/v/release/Ashok007-cmd/SCM-Platform?style=flat-square&color=blue)](https://github.com/Ashok007-cmd/SCM-Platform/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/Live%20Demo-GitHub%20Pages-0078D4?style=flat-square&logo=github)](https://ashok007-cmd.github.io/SCM-Platform/)
 
 ---
 
