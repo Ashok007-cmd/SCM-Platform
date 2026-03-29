@@ -222,11 +222,25 @@ Features: PostgreSQL ENUM types, generated columns, GIN trigram indexes for full
 
 ---
 
-## Author
+## Contributors
 
-**Ashok Kumar** — [@Ashok007-cmd](https://github.com/Ashok007-cmd)
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://github.com/Ashok007-cmd">
+        <img src="https://github.com/Ashok007-cmd.png" width="100px;" alt="Ashok Kumar V"/><br/>
+        <sub><b>Ashok Kumar V</b></sub>
+      </a><br/>
+      <sub>Creator & Lead Developer</sub>
+    </td>
+  </tr>
+</table>
+
+**Ashok Kumar V** — [@Ashok007-cmd](https://github.com/Ashok007-cmd)
 
 This is my first end-to-end production project. Every line of code, every pipeline, every architecture decision was designed and built by me. It represents what I've learned about building real software that works at scale.
+
+Contributions are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ---
 
@@ -234,6 +248,6 @@ This is my first end-to-end production project. Every line of code, every pipeli
 
 [![Live Demo](https://img.shields.io/badge/Try%20the%20Live%20Demo-0078D4?style=for-the-badge&logo=github&logoColor=white)](https://ashok007-cmd.github.io/SCM-Platform/)
 
-*MIT License · Built to solve real supply chain challenges*
+*MIT License · Built by [Ashok Kumar V](https://github.com/Ashok007-cmd) · Open Source*
 
 </div>
