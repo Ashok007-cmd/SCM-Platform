@@ -23,6 +23,9 @@ class Settings(BaseSettings):
     kafka_api_key: str = ""
     kafka_api_secret: str = ""
 
+    # CORS
+    allowed_origins: list[str] = ["http://localhost:3000", "http://localhost:5173"]
+
     # ML model settings
     forecast_cache_ttl: int = 3600
     model_retrain_days: int = 7

@@ -7,7 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
 
-from routers import forecast, risk, optimization
+from routers import forecast
+from routers import supplier_risk as risk
+from routers import route_optimization as optimization
 from core.config import settings
 from core.logging import setup_logging
 
@@ -32,7 +34,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=settings.allowed_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
