@@ -23,10 +23,19 @@ spec:
         ad.datadoghq.com/scm-ai-ml.logs: '[{"source":"python","service":"scm-ai-ml"}]'
     spec:
       terminationGracePeriodSeconds: 30
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: scm-ai-ml
-          image: ghcr.io/ashok007-cmd/scm-platform/scm-ai-ml:latest
+          image: ghcr.io/ashok007-cmd/scm-platform/scm-ai-ml:tag-placeholder
           imagePullPolicy: Always
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - name: http
               containerPort: 8000

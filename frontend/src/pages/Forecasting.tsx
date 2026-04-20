@@ -13,15 +13,15 @@ export default function Forecasting() {
 
   const { data: forecast, isLoading, refetch } = useQuery({
     queryKey: ['forecast', productId, horizon],
-    queryFn: () => scmApi.forecast.demand({ product_id: productId, horizon_days: horizon }),
-    enabled: !!productId,
+    queryFn: () => scmApi.forecast.demand({ product_id: productId, horizon_days: horizon }).then(r => r.data),
+    enabled: !!productId && productId.trim().length > 0,
   })
 
   const chartData = forecast?.forecast?.map((f: any) => ({
-    date: formatDate(f.ds),
-    predicted: Math.round(f.yhat),
-    lower: Math.round(f.yhat_lower),
-    upper: Math.round(f.yhat_upper),
+    date: formatDate(f.date),
+    predicted: Math.round(f.predicted_demand),
+    lower: Math.round(f.lower_bound ?? 0),
+    upper: Math.round(f.upper_bound ?? 0),
   })) ?? []
 
   return (

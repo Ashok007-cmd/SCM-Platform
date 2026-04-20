@@ -6,12 +6,16 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 import uvicorn
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 
 from routers import forecast
 from routers import supplier_risk as risk
 from routers import route_optimization as optimization
 from core.config import settings
 from core.logging import setup_logging
+from core.limiter import limiter
 
 setup_logging()
 
@@ -32,11 +36,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.allowed_origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type", "Authorization", "X-Request-ID"],
 )
 
 # ─── Routers ──────────────────────────────────────────────────
@@ -45,7 +52,7 @@ app.include_router(risk.router,         prefix="/api/v1/risk",           tags=["
 app.include_router(optimization.router, prefix="/api/v1/optimization",   tags=["Route Optimization"])
 
 
-@app.get("/health", tags=["Health"])
+@app.get("/api/v1/health", tags=["Health"])
 async def health():
     return {"status": "UP", "service": "scm-ai-ml"}
 

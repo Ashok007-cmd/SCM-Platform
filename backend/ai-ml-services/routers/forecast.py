@@ -2,12 +2,14 @@
 Demand Forecasting Router
 Uses Prophet + XGBoost ensemble for multi-horizon SCM demand forecasting
 """
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Request
+from core.limiter import limiter
 from pydantic import BaseModel, Field
 from typing import Optional
 import pandas as pd
 import numpy as np
 from datetime import date, timedelta
+import asyncio
 
 router = APIRouter()
 
@@ -46,7 +48,8 @@ class BatchForecastRequest(BaseModel):
 
 # ─── Endpoints ────────────────────────────────────────────────
 @router.post("/demand", response_model=ForecastResponse)
-async def forecast_demand(request: ForecastRequest):
+@limiter.limit("10/minute")
+async def forecast_demand(request: ForecastRequest, fastapi_req: Request):
     """
     Generate demand forecast for a single product using Prophet + XGBoost ensemble.
     Returns daily predictions with confidence intervals and reorder recommendations.
@@ -55,8 +58,9 @@ async def forecast_demand(request: ForecastRequest):
         from core.model_registry import ModelRegistry
         model = ModelRegistry.get("demand_forecast")
 
-        # Generate forecast
-        forecast_df = model.predict(
+        # Generate forecast via threadpool to avoid blocking ASGI event loop
+        forecast_df = await asyncio.to_thread(
+            model.predict,
             product_id=request.product_id,
             warehouse_code=request.warehouse_code,
             horizon=request.horizon_days,
@@ -85,8 +89,8 @@ async def forecast_demand(request: ForecastRequest):
             warehouse_code=request.warehouse_code,
             horizon_days=request.horizon_days,
             model_used="prophet_xgboost_ensemble_v2",
-            mae=round(forecast_df.get("mae", [None])[0], 3) if "mae" in forecast_df else None,
-            mape=round(forecast_df.get("mape", [None])[0], 3) if "mape" in forecast_df else None,
+            mae=round(forecast_df["mae"].iloc[0], 3) if "mae" in forecast_df.columns else None,
+            mape=round(forecast_df["mape"].iloc[0], 3) if "mape" in forecast_df.columns else None,
             forecast=points,
             reorder_recommendation=reorder_rec,
         )
@@ -98,18 +102,19 @@ async def forecast_demand(request: ForecastRequest):
 
 
 @router.post("/demand/batch", response_model=list[ForecastResponse])
-async def batch_forecast(request: BatchForecastRequest):
-    """Batch demand forecast for multiple products (max 50)."""
-    results = []
-    for pid in request.product_ids:
-        try:
-            result = await forecast_demand(
-                ForecastRequest(product_id=pid, horizon_days=request.horizon_days)
-            )
-            results.append(result)
-        except HTTPException:
-            continue
-    return results
+@limiter.limit("2/minute")
+async def batch_forecast(request: BatchForecastRequest, fastapi_req: Request):
+    """Batch demand forecast for multiple products (max 50) concurrently."""
+    
+    tasks = [
+        forecast_demand(ForecastRequest(product_id=pid, horizon_days=request.horizon_days), fastapi_req)
+        for pid in request.product_ids
+    ]
+
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    valid_results = [r for r in results if isinstance(r, ForecastResponse)]
+    return valid_results
 
 
 @router.get("/demand/accuracy/{product_id}")

@@ -2,17 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { Warehouse as WarehouseIcon, MapPin, Package, Thermometer } from 'lucide-react'
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import { formatNumber, formatPercent } from '../lib/format'
+import { scmApi } from '../lib/api'
 
-// Warehouse data is served from the inventory stats endpoint
 function useWarehouses() {
   return useQuery({
     queryKey: ['warehouses'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/warehouses')
-      if (!res.ok) throw new Error('Failed to fetch warehouses')
-      return res.json()
-    },
+    queryFn: () => scmApi.warehouses.list().then(r => r.data),
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 }
 

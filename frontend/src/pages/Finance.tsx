@@ -5,16 +5,14 @@ import {
   ResponsiveContainer, LineChart, Line, Legend,
 } from 'recharts'
 import { formatCurrency } from '../lib/format'
+import { scmApi } from '../lib/api'
 
 function useFinanceStats() {
   return useQuery({
     queryKey: ['finance-stats'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/finance/stats')
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.finance.stats().then(r => r.data),
     refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   })
 }
 

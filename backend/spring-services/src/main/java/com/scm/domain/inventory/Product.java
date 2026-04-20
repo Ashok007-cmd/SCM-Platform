@@ -2,6 +2,9 @@ package com.scm.domain.inventory;
 
 import com.scm.domain.supplier.Supplier;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -21,9 +24,11 @@ public class Product {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank(message = "SKU is required")
     @Column(nullable = false, unique = true, length = 100)
     private String sku;
 
+    @NotBlank(message = "Product name is required")
     @Column(nullable = false)
     private String name;
 
@@ -32,6 +37,8 @@ public class Product {
 
     private String category;
 
+    @NotNull(message = "Unit cost is required")
+    @PositiveOrZero(message = "Unit cost must be zero or positive")
     @Column(name = "unit_cost", precision = 12, scale = 2)
     private BigDecimal unitCost;
 

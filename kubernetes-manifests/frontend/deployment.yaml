@@ -21,9 +21,18 @@ spec:
       labels:
         app: scm-frontend
     spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 101
+        fsGroup: 101
       containers:
         - name: scm-frontend
-          image: DOCKERHUB_USERNAME/scm-frontend:latest
+          image: DOCKERHUB_USERNAME/scm-frontend:tag-placeholder
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 80
           resources:
@@ -71,7 +80,7 @@ metadata:
     alb.ingress.kubernetes.io/target-type: ip
 spec:
   rules:
-    - host: scm.yourdomain.com
+    - host: ${SCM_DOMAIN}
       http:
         paths:
           - path: /

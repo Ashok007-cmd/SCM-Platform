@@ -1,13 +1,14 @@
 package com.scm.security;
 
 import io.jsonwebtoken.*;
-import io.jsonwebtoken.security.Keys;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.Date;
 import java.util.List;
 
@@ -15,7 +16,7 @@ import java.util.List;
 @Component
 public class JwtTokenProvider {
 
-    private final SecretKey key;
+    private final SecretKey signingKey;
     private final long expirationMs;
     private final String issuer;
 
@@ -23,9 +24,16 @@ public class JwtTokenProvider {
             @Value("${scm.security.jwt.secret}") String secret,
             @Value("${scm.security.jwt.expiration-ms}") long expirationMs,
             @Value("${scm.security.jwt.issuer}") String issuer) {
-        this.key         = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
         this.expirationMs = expirationMs;
-        this.issuer      = issuer;
+        this.issuer = issuer;
+
+        byte[] keyBytes = Base64.getDecoder().decode(
+                Base64.getEncoder().encodeToString(secret.getBytes(StandardCharsets.UTF_8)));
+        if (keyBytes.length < 32) {
+            throw new IllegalArgumentException("JWT_SECRET must be at least 32 characters");
+        }
+        this.signingKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+        log.info("JwtTokenProvider initialized with persistent HMAC-SHA256 key");
     }
 
     public String generate(String subject, List<String> roles) {
@@ -35,13 +43,13 @@ public class JwtTokenProvider {
             .claim("roles", roles)
             .issuedAt(new Date())
             .expiration(new Date(System.currentTimeMillis() + expirationMs))
-            .signWith(key)
+            .signWith(signingKey)
             .compact();
     }
 
     public Claims parse(String token) {
         return Jwts.parser()
-            .verifyWith(key)
+            .verifyWith(signingKey)
             .requireIssuer(issuer)
             .build()
             .parseSignedClaims(token)

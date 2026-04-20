@@ -20,6 +20,9 @@ resources:
   # React frontend + ALB ingress
   - frontend/deployment.yaml
 
+  # Security: Network isolation policies
+  - network-policies.yaml
+
 commonLabels:
   app.kubernetes.io/part-of: scm-platform
   app.kubernetes.io/managed-by: argocd

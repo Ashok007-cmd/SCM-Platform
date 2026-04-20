@@ -2,16 +2,14 @@ import { useQuery } from '@tanstack/react-query'
 import { ShieldCheck, AlertTriangle, XCircle, CheckCircle } from 'lucide-react'
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts'
 import { formatPercent, formatDate } from '../lib/format'
+import { scmApi } from '../lib/api'
 
 function useQualityData() {
   return useQuery({
     queryKey: ['quality-inspections'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/quality-inspections?limit=50')
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.quality.inspections(50).then(r => r.data),
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 }
 

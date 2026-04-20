@@ -58,15 +58,36 @@ jobs:
         with:
           languages: java, python
 
+      - name: Build Backend Docker Image (local, for scanning)
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          push: false
+          load: true
+          tags: scm-backend:scan
+
+      - name: Scan Backend Image for Vulnerabilities (Trivy)
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: scm-backend:scan
+          format: table
+          exit-code: '1'
+          ignore-unfixed: true
+          severity: CRITICAL,HIGH
+
       - name: Login to Docker Hub
+        if: github.ref == 'refs/heads/main'
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Build and Push Backend Docker Image
+      - name: Push Backend Docker Image
+        if: github.ref == 'refs/heads/main'
         uses: docker/build-push-action@v5
         with:
           context: ./backend
-          push: ${{ github.ref == 'refs/heads/main' }}
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/scm-backend:${{ github.sha }}
+          push: true
+          tags: |
+            ${{ secrets.DOCKERHUB_USERNAME }}/scm-backend:${{ github.sha }}
+            ${{ secrets.DOCKERHUB_USERNAME }}/scm-backend:latest

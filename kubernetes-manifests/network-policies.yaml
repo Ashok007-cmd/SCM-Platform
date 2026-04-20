@@ -1,0 +1,107 @@
+# NetworkPolicies — restrict pod-to-pod communication to only required paths.
+# Default: deny all ingress/egress, then allow only what's needed.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: scm-platform
+spec:
+  podSelector: {}
+  policyTypes:
+    - Ingress
+    - Egress
+---
+# Backend: accepts traffic from frontend (nginx proxy) and from ingress controller.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-backend-ingress
+  namespace: scm-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: scm-backend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: scm-frontend
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8080
+  egress:
+    - ports:
+        - port: 5432   # PostgreSQL
+        - port: 6379   # Redis
+        - port: 9092   # Kafka
+        - port: 443    # AWS/external HTTPS
+        - port: 53     # DNS
+          protocol: UDP
+---
+# AI/ML service: accepts traffic from backend only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-aiml-ingress
+  namespace: scm-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: scm-ai-ml
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - podSelector:
+            matchLabels:
+              app: scm-backend
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 8000
+  egress:
+    - ports:
+        - port: 5432   # PostgreSQL
+        - port: 6379   # Redis
+        - port: 9092   # Kafka
+        - port: 443    # External HTTPS (model downloads)
+        - port: 53
+          protocol: UDP
+---
+# Frontend: accepts traffic from ingress controller only.
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-frontend-ingress
+  namespace: scm-platform
+spec:
+  podSelector:
+    matchLabels:
+      app: scm-frontend
+  policyTypes:
+    - Ingress
+    - Egress
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              kubernetes.io/metadata.name: ingress-nginx
+      ports:
+        - port: 80
+  egress:
+    - to:
+        - podSelector:
+            matchLabels:
+              app: scm-backend
+      ports:
+        - port: 8080
+    - ports:
+        - port: 53
+          protocol: UDP

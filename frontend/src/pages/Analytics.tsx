@@ -3,21 +3,19 @@ import { useQuery } from '@tanstack/react-query'
 import { BarChart2, TrendingUp, Activity } from 'lucide-react'
 import {
   ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip,
-  ResponsiveContainer, Legend, ScatterChart, Scatter, ZAxis,
+  ResponsiveContainer, Legend,
 } from 'recharts'
 import { formatCurrency, formatNumber } from '../lib/format'
+import { scmApi } from '../lib/api'
 
 type Period = '7d' | '30d' | '90d' | '1y'
 
 function useAnalytics(period: Period) {
   return useQuery({
     queryKey: ['analytics', period],
-    queryFn: async () => {
-      const res = await fetch(`/api/v1/analytics/overview?period=${period}`)
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.analytics.overview(period).then(r => r.data),
     refetchInterval: 300_000,
+    refetchIntervalInBackground: false,
   })
 }
 

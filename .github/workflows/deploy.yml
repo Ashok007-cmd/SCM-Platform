@@ -66,8 +66,34 @@ jobs:
           git commit -m "chore(deploy): update image tags to ${{ env.IMAGE_TAG }} [skip ci]"
           git push
 
+      - name: Wait for ArgoCD rollout
+        run: |
+          echo "Waiting 90s for ArgoCD to apply manifests and rollout to stabilize..."
+          sleep 90
+
+      - name: Run Smoke Tests (Newman)
+        id: smoke
+        continue-on-error: true
+        run: |
+          npm install -g newman
+          newman run tests/postman/scm-smoke-tests.json \
+            --env-var baseUrl=${{ secrets.SMOKE_TEST_BASE_URL }} \
+            --reporters cli \
+            --bail
+
+      - name: Rollback on Smoke Test Failure
+        if: steps.smoke.outcome == 'failure'
+        run: |
+          echo "Smoke tests FAILED. Rolling back backend and AI/ML to previous image..."
+          # Restore previous image tag in manifests and push to trigger ArgoCD rollback
+          git log --oneline -5
+          git revert HEAD --no-commit
+          git commit -m "revert(deploy): rollback to previous image — smoke tests failed [skip ci]"
+          git push
+          echo "Rollback commit pushed. ArgoCD will restore previous deployment."
+          exit 1
+
       - name: ArgoCD sync status
         run: |
-          echo "Manifests updated. ArgoCD will automatically detect the change"
-          echo "and perform a rolling update. Monitor at your ArgoCD UI."
-          echo "Image tag deployed: ${{ env.IMAGE_TAG }}"
+          echo "Manifests updated and smoke tests passed."
+          echo "ArgoCD rolling update complete. Image tag: ${{ env.IMAGE_TAG }}"

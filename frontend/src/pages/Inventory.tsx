@@ -16,6 +16,7 @@ export default function Inventory() {
     queryKey: ['inventory', status, page],
     queryFn: () => scmApi.inventory.list({ status: status === 'all' ? undefined : status, page, pageSize }),
     refetchInterval: 30_000,
+    refetchIntervalInBackground: false,
   })
 
   const { data: stats } = useQuery({

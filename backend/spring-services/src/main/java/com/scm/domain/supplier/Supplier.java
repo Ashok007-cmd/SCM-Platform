@@ -1,6 +1,8 @@
 package com.scm.domain.supplier;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -20,14 +22,17 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank(message = "Supplier name is required")
     @Column(nullable = false)
     private String name;
 
+    @NotBlank(message = "Supplier code is required")
     @Column(nullable = false, unique = true, length = 50)
     private String code;
 
     private String country;
 
+    @Email(message = "Contact email must be a valid email address")
     @Column(name = "contact_email")
     private String contactEmail;
 

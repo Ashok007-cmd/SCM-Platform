@@ -29,33 +29,51 @@ spec:
             - migrate
           env:
             - name: FLYWAY_URL
-              value: jdbc:postgresql://$(DB_HOST):5432/scmdb
+              value: jdbc:postgresql://$(DB_HOST):5432/$(DB_NAME)
             - name: FLYWAY_USER
               value: scmuser
             - name: FLYWAY_PASSWORD
               valueFrom:
                 secretKeyRef:
-                  name: backend-secrets
+                  name: scm-backend-secrets
                   key: DB_PASSWORD
             - name: FLYWAY_LOCATIONS
               value: filesystem:/flyway/sql
           envFrom:
             - secretRef:
-                name: backend-secrets
+                name: scm-backend-secrets
           volumeMounts:
             - name: migration-scripts
               mountPath: /flyway/sql
 
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchLabels:
+                    app: scm-backend
+                topologyKey: topology.kubernetes.io/zone
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
       containers:
         - name: scm-backend
-          image: ghcr.io/ashok007-cmd/scm-platform/scm-backend:latest
+          image: ghcr.io/ashok007-cmd/scm-platform/scm-backend:tag-placeholder
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: ["ALL"]
           ports:
             - containerPort: 8080
           envFrom:
             - configMapRef:
                 name: backend-config
             - secretRef:
-                name: backend-secrets
+                name: scm-backend-secrets
           resources:
             requests:
               memory: "512Mi"

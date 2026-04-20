@@ -1,16 +1,14 @@
 import { useQuery } from '@tanstack/react-query'
 import { ShieldCheck, AlertTriangle, Clock, CheckCircle, XCircle } from 'lucide-react'
 import { formatDate } from '../lib/format'
+import { scmApi } from '../lib/api'
 
 function useComplianceRecords() {
   return useQuery({
     queryKey: ['compliance-records'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/compliance-records?limit=50')
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.compliance.records(50).then(r => r.data),
     refetchInterval: 120_000,
+    refetchIntervalInBackground: false,
   })
 }
 

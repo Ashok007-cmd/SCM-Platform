@@ -2,28 +2,21 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { FileText, Clock, CheckCircle, DollarSign, Search } from 'lucide-react'
 import { formatCurrency, formatDate } from '../lib/format'
+import { scmApi } from '../lib/api'
 
 function usePurchaseOrders(status: string) {
   return useQuery({
     queryKey: ['purchase-orders', status],
-    queryFn: async () => {
-      const params = status !== 'all' ? `?status=${status}` : ''
-      const res = await fetch(`/api/v1/purchase-orders${params}`)
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.procurement.list(status).then(r => r.data),
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 }
 
 function usePOStats() {
   return useQuery({
     queryKey: ['po-stats'],
-    queryFn: async () => {
-      const res = await fetch('/api/v1/purchase-orders/stats')
-      if (!res.ok) throw new Error('Failed')
-      return res.json()
-    },
+    queryFn: () => scmApi.procurement.stats().then(r => r.data),
   })
 }
 

@@ -1,6 +1,10 @@
 package com.scm.domain.order;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -22,12 +26,15 @@ public class Order {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
 
+    @NotBlank(message = "Order number is required")
     @Column(name = "order_number", nullable = false, unique = true, length = 50)
     private String orderNumber;
 
+    @NotBlank(message = "Customer name is required")
     @Column(name = "customer_name", nullable = false)
     private String customerName;
 
+    @Email(message = "Customer email must be a valid email address")
     @Column(name = "customer_email")
     private String customerEmail;
 
@@ -49,6 +56,9 @@ public class Order {
 
     @Column(name = "delivered_at")
     private Instant deliveredAt;
+
+    @Column(name = "tracking_number", length = 100)
+    private String trackingNumber;
 
     @OneToMany(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default

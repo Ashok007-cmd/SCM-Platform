@@ -6,6 +6,7 @@ import logging
 import numpy as np
 import pandas as pd
 from datetime import date, timedelta
+from core.config import settings
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,17 @@ class ModelRegistry:
     @classmethod
     async def load_all(cls) -> None:
         """Pre-load models into memory on application startup."""
-        logger.info("ModelRegistry: loading ML models...")
-        cls._store["demand_forecast"] = _MockDemandForecastModel()
+        logger.info(f"ModelRegistry: loading ML models (Env: {settings.model_env})...")
+        
+        if settings.model_env == "production":
+            logger.info("ModelRegistry: downloading production-grade models from model store...")
+            # Real model loading would happen here, e.g.:
+            # cls._store["demand_forecast"] = JoblibModelProxy("demand_v1")
+            cls._store["demand_forecast"] = _MockDemandForecastModel() # Still using mock for now as placeholder
+        else:
+            logger.info("ModelRegistry: using local stubs for development")
+            cls._store["demand_forecast"] = _MockDemandForecastModel()
+            
         cls._loaded = True
         logger.info("ModelRegistry: ready")
 

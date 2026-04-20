@@ -17,6 +17,7 @@ export default function Suppliers() {
       status: status === 'all' ? undefined : status,
     }),
     refetchInterval: 60_000,
+    refetchIntervalInBackground: false,
   })
 
   const { data: stats } = useQuery({

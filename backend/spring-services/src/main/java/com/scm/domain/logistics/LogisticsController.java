@@ -34,6 +34,7 @@ public class LogisticsController {
     }
 
     @GetMapping("/track/{trackingNumber}")
+    @PreAuthorize("hasAnyRole('ADMIN','OPERATIONS_MANAGER','WAREHOUSE_MANAGER','VIEWER','ANALYST')")
     public Shipment track(@PathVariable String trackingNumber) {
         return service.findByTrackingNumber(trackingNumber);
     }
